@@ -26,15 +26,15 @@ import (
 	slsav1 "github.com/tektoncd/chains/pkg/chains/formats/slsa/v1/taskrun"
 	"github.com/tektoncd/chains/pkg/chains/objects"
 	"github.com/tektoncd/chains/pkg/config"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // BuildConfig is the custom Chains format to fill out the
 // "buildConfig" section of the slsa-provenance predicate
 type BuildConfig struct {
-	TaskSpec       *v1beta1.TaskSpec       `json:"taskSpec"`
-	TaskRunResults []v1beta1.TaskRunResult `json:"taskRunResults"`
+	TaskSpec       *v1.TaskSpec       `json:"taskSpec"`
+	Results []v1.TaskRunResult `json:"taskRunResults"`
 }
 
 func GenerateAttestation(ctx context.Context, builderID string, payloadType config.PayloadType, tro *objects.TaskRunObject) (interface{}, error) {
@@ -55,7 +55,7 @@ func GenerateAttestation(ctx context.Context, builderID string, payloadType conf
 			},
 			BuildType:   fmt.Sprintf("https://chains.tekton.dev/format/%v/type/%s", payloadType, tro.GetGVK()),
 			Invocation:  invocation(tro),
-			BuildConfig: BuildConfig{TaskSpec: tro.Status.TaskSpec, TaskRunResults: tro.Status.TaskRunResults},
+			BuildConfig: BuildConfig{TaskSpec: tro.Status.TaskSpec, Results: tro.Status.Results},
 			Metadata:    metadata(tro),
 			Materials:   mat,
 		},

@@ -33,7 +33,7 @@ import (
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	remotetest "github.com/tektoncd/pipeline/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -43,13 +43,13 @@ import (
 const namespace = "oci-test"
 
 var (
-	tr = &v1beta1.TaskRun{
+	tr = &v1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: namespace,
 		},
 	}
-	pr = &v1beta1.PipelineRun{
+	pr = &v1.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: namespace,

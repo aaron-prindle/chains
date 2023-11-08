@@ -24,7 +24,7 @@ import (
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/material"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/slsaconfig"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 func GenerateAttestation(ctx context.Context, tro *objects.TaskRunObject, slsaConfig *slsaconfig.SlsaConfig) (interface{}, error) {
@@ -58,7 +58,7 @@ func GenerateAttestation(ctx context.Context, tro *objects.TaskRunObject, slsaCo
 // we currently don't set ConfigSource because we don't know
 // which material the Task definition came from
 func invocation(tro *objects.TaskRunObject) slsa.ProvenanceInvocation {
-	var paramSpecs []v1beta1.ParamSpec
+	var paramSpecs []v1.ParamSpec
 	if ts := tro.Status.TaskSpec; ts != nil {
 		paramSpecs = ts.Params
 	}

@@ -19,11 +19,11 @@ import (
 	"github.com/tektoncd/chains/pkg/chains"
 	"github.com/tektoncd/chains/pkg/chains/storage"
 	"github.com/tektoncd/chains/pkg/config"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	pipelineclient "github.com/tektoncd/pipeline/pkg/client/injection/client"
-	pipelineruninformer "github.com/tektoncd/pipeline/pkg/client/injection/informers/pipeline/v1beta1/pipelinerun"
-	taskruninformer "github.com/tektoncd/pipeline/pkg/client/injection/informers/pipeline/v1beta1/taskrun"
-	pipelinerunreconciler "github.com/tektoncd/pipeline/pkg/client/injection/reconciler/pipeline/v1beta1/pipelinerun"
+	pipelineruninformer "github.com/tektoncd/pipeline/pkg/client/injection/informers/pipeline/v1/pipelinerun"
+	taskruninformer "github.com/tektoncd/pipeline/pkg/client/injection/informers/pipeline/v1/taskrun"
+	pipelinerunreconciler "github.com/tektoncd/pipeline/pkg/client/injection/reconciler/pipeline/v1/pipelinerun"
 	"k8s.io/client-go/tools/cache"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	"knative.dev/pkg/configmap"
@@ -80,7 +80,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	pipelineRunInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
 
 	taskRunInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: controller.FilterController(&v1beta1.PipelineRun{}),
+		FilterFunc: controller.FilterController(&v1.PipelineRun{}),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
 

@@ -25,14 +25,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
-	"github.com/tektoncd/chains/internal/backport"
 	"github.com/tektoncd/chains/pkg/artifacts"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/compare"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/slsaconfig"
 	"github.com/tektoncd/chains/pkg/chains/objects"
 	"github.com/tektoncd/chains/pkg/internal/objectloader"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logtesting "knative.dev/pkg/logging/testing"
 	"sigs.k8s.io/yaml"
@@ -60,9 +58,9 @@ func createPro(path string) *objects.PipelineRunObject {
 	return p
 }
 
-func TestMaterialsWithTaskRunResults(t *testing.T) {
+func TestMaterialsWithResults(t *testing.T) {
 	// make sure this works with Git resources
-	taskrun := `apiVersion: tekton.dev/v1beta1
+	taskrun := `apiVersion: tekton.dev/v1
 kind: TaskRun
 spec:
   taskSpec:
@@ -77,7 +75,7 @@ status:
   - name: CHAINS-GIT_URL
     value: https://github.com/GoogleContainerTools/distroless`
 
-	var taskRun *v1beta1.TaskRun
+	var taskRun *v1.TaskRun
 	if err := yaml.Unmarshal([]byte(taskrun), &taskRun); err != nil {
 		t.Fatal(err)
 	}
@@ -104,55 +102,59 @@ status:
 func TestTaskMaterials(t *testing.T) {
 	tests := []struct {
 		name    string
-		taskRun *v1beta1.TaskRun
+		taskRun *v1.TaskRun
 		want    []common.ProvenanceMaterial
 	}{{
 		name: "materials from pipeline resources",
-		taskRun: &v1beta1.TaskRun{
-			Spec: v1beta1.TaskRunSpec{
-				Resources: &v1beta1.TaskRunResources{
-					Inputs: []v1beta1.TaskResourceBinding{
-						{
-							PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-								Name: "nil-resource-spec",
-							},
-						}, {
-							PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-								Name: "repo",
-								ResourceSpec: &v1alpha1.PipelineResourceSpec{
-									Params: []v1alpha1.ResourceParam{
-										{Name: "url", Value: "https://github.com/GoogleContainerTools/distroless"},
-										{Name: "revision", Value: "my-revision"},
-									},
-									Type: backport.PipelineResourceTypeGit,
-								},
-							},
-						},
-					},
-				},
+		taskRun: &v1.TaskRun{
+			Spec: v1.TaskRunSpec{
+				// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+				// Resources: &v1.TaskRunResources{
+				// 	Inputs: []v1.TaskResourceBinding{
+				// 		{
+				// 			PipelineResourceBinding: v1.PipelineResourceBinding{
+				// 				Name: "nil-resource-spec",
+				// 			},
+				// 		}, {
+				// 			PipelineResourceBinding: v1.PipelineResourceBinding{
+				// 				Name: "repo",
+				// 				ResourceSpec: &v1alpha1.PipelineResourceSpec{
+				// 					Params: []v1alpha1.ResourceParam{
+				// 						{Name: "url", Value: "https://github.com/GoogleContainerTools/distroless"},
+				// 						{Name: "revision", Value: "my-revision"},
+				// 					},
+				// 					Type: backport.PipelineResourceTypeGit,
+				// 				},
+				// 			},
+				// 		},
+				// 	},
+				// },
 			},
-			Status: v1beta1.TaskRunStatus{
-				TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-					TaskRunResults: []v1beta1.TaskRunResult{
+			Status: v1.TaskRunStatus{
+				TaskRunStatusFields: v1.TaskRunStatusFields{
+					Results: []v1.TaskRunResult{
 						{
 							Name: "img1_input" + "-" + artifacts.ArtifactsInputsResultName,
-							Value: *v1beta1.NewObject(map[string]string{
+							Value: *v1.NewObject(map[string]string{
 								"uri":    "gcr.io/foo/bar",
 								"digest": digest,
 							}),
 						},
 					},
-					ResourcesResult: []v1beta1.PipelineResourceResult{
-						{
-							ResourceName: "repo",
-							Key:          "commit",
-							Value:        "50c56a48cfb3a5a80fa36ed91c739bdac8381cbe",
-						}, {
-							ResourceName: "repo",
-							Key:          "url",
-							Value:        "https://github.com/GoogleContainerTools/distroless",
-						},
-					},
+					// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+					// ResourcesResult: []v1.PipelineResourceResult{
+					// 	{
+					// 		ResourceName: "repo",
+					// 		Key:          "commit",
+					// 		Value:        "50c56a48cfb3a5a80fa36ed91c739bdac8381cbe",
+					// 	}, {
+					// 		ResourceName: "repo",
+					// 		Key:          "url",
+					// 		Value:        "https://github.com/GoogleContainerTools/distroless",
+					// 	},
+					// },
 				},
 			},
 		},
@@ -172,14 +174,14 @@ func TestTaskMaterials(t *testing.T) {
 		},
 	}, {
 		name: "materials from git results in task run spec",
-		taskRun: &v1beta1.TaskRun{
-			Spec: v1beta1.TaskRunSpec{
-				Params: []v1beta1.Param{{
+		taskRun: &v1.TaskRun{
+			Spec: v1.TaskRunSpec{
+				Params: []v1.Param{{
 					Name:  "CHAINS-GIT_COMMIT",
-					Value: *v1beta1.NewStructuredValues("my-commit"),
+					Value: *v1.NewStructuredValues("my-commit"),
 				}, {
 					Name:  "CHAINS-GIT_URL",
-					Value: *v1beta1.NewStructuredValues("github.com/something"),
+					Value: *v1.NewStructuredValues("github.com/something"),
 				}},
 			},
 		},
@@ -193,18 +195,18 @@ func TestTaskMaterials(t *testing.T) {
 		},
 	}, {
 		name: "materials from git results in task spec",
-		taskRun: &v1beta1.TaskRun{
-			Status: v1beta1.TaskRunStatus{
-				TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-					TaskSpec: &v1beta1.TaskSpec{
-						Params: []v1beta1.ParamSpec{{
+		taskRun: &v1.TaskRun{
+			Status: v1.TaskRunStatus{
+				TaskRunStatusFields: v1.TaskRunStatusFields{
+					TaskSpec: &v1.TaskSpec{
+						Params: []v1.ParamSpec{{
 							Name: "CHAINS-GIT_COMMIT",
-							Default: &v1beta1.ParamValue{
+							Default: &v1.ParamValue{
 								StringVal: "my-commit",
 							},
 						}, {
 							Name: "CHAINS-GIT_URL",
-							Default: &v1beta1.ParamValue{
+							Default: &v1.ParamValue{
 								StringVal: "github.com/something",
 							},
 						}},
@@ -222,23 +224,23 @@ func TestTaskMaterials(t *testing.T) {
 		},
 	}, {
 		name: "materials from git results in task spec and taskrun spec",
-		taskRun: &v1beta1.TaskRun{
-			Spec: v1beta1.TaskRunSpec{
-				Params: []v1beta1.Param{{
+		taskRun: &v1.TaskRun{
+			Spec: v1.TaskRunSpec{
+				Params: []v1.Param{{
 					Name: "CHAINS-GIT_URL",
-					Value: v1beta1.ParamValue{
+					Value: v1.ParamValue{
 						StringVal: "github.com/something",
 					},
 				}},
 			},
-			Status: v1beta1.TaskRunStatus{
-				TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-					TaskSpec: &v1beta1.TaskSpec{
-						Params: []v1beta1.ParamSpec{{
+			Status: v1.TaskRunStatus{
+				TaskRunStatusFields: v1.TaskRunStatusFields{
+					TaskSpec: &v1.TaskSpec{
+						Params: []v1.ParamSpec{{
 							Name: "CHAINS-GIT_URL",
 						}, {
 							Name: "CHAINS-GIT_COMMIT",
-							Default: &v1beta1.ParamValue{
+							Default: &v1.ParamValue{
 								StringVal: "my-commit",
 							},
 						}},
@@ -254,10 +256,10 @@ func TestTaskMaterials(t *testing.T) {
 		}},
 	}, {
 		name: "materials from step images",
-		taskRun: &v1beta1.TaskRun{
-			Status: v1beta1.TaskRunStatus{
-				TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-					Steps: []v1beta1.StepState{{
+		taskRun: &v1.TaskRun{
+			Status: v1.TaskRunStatus{
+				TaskRunStatusFields: v1.TaskRunStatusFields{
+					Steps: []v1.StepState{{
 						Name:    "git-source-repo-jwqcl",
 						ImageID: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@sha256:b963f6e7a69617db57b685893256f978436277094c21d43b153994acd8a01247",
 					}, {
@@ -286,10 +288,10 @@ func TestTaskMaterials(t *testing.T) {
 		},
 	}, {
 		name: "materials from step and sidecar images",
-		taskRun: &v1beta1.TaskRun{
-			Status: v1beta1.TaskRunStatus{
-				TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-					Steps: []v1beta1.StepState{{
+		taskRun: &v1.TaskRun{
+			Status: v1.TaskRunStatus{
+				TaskRunStatusFields: v1.TaskRunStatusFields{
+					Steps: []v1.StepState{{
 						Name:    "git-source-repo-jwqcl",
 						ImageID: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@sha256:b963f6e7a69617db57b685893256f978436277094c21d43b153994acd8a01247",
 					}, {
@@ -299,7 +301,7 @@ func TestTaskMaterials(t *testing.T) {
 						Name:    "build",
 						ImageID: "gcr.io/cloud-marketplace-containers/google/bazel@sha256:010a1ecd1a8c3610f12039a25b823e3a17bd3e8ae455a53e340dcfdd37a49964",
 					}},
-					Sidecars: []v1beta1.SidecarState{{
+					Sidecars: []v1.SidecarState{{
 						Name:    "sidecar-jwqcl",
 						ImageID: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/sidecar-git-init@sha256:a1234f6e7a69617db57b685893256f978436277094c21d43b153994acd8a09567",
 					}},
@@ -448,15 +450,15 @@ func TestFromPipelineParamsAndResults(t *testing.T) {
 		want                 []common.ProvenanceMaterial
 	}{{
 		name: "from results",
-		pipelineRunObject: objects.NewPipelineRunObject(&v1beta1.PipelineRun{
-			Status: v1beta1.PipelineRunStatus{
-				PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-					PipelineResults: []v1beta1.PipelineRunResult{{
+		pipelineRunObject: objects.NewPipelineRunObject(&v1.PipelineRun{
+			Status: v1.PipelineRunStatus{
+				PipelineRunStatusFields: v1.PipelineRunStatusFields{
+					Results: []v1.PipelineRunResult{{
 						Name:  "CHAINS-GIT_COMMIT",
-						Value: *v1beta1.NewStructuredValues("my-commit"),
+						Value: *v1.NewStructuredValues("my-commit"),
 					}, {
 						Name:  "CHAINS-GIT_URL",
-						Value: *v1beta1.NewStructuredValues("github.com/something"),
+						Value: *v1.NewStructuredValues("github.com/something"),
 					}},
 				},
 			},
@@ -469,18 +471,18 @@ func TestFromPipelineParamsAndResults(t *testing.T) {
 		}},
 	}, {
 		name: "from pipelinespec",
-		pipelineRunObject: objects.NewPipelineRunObject(&v1beta1.PipelineRun{
-			Status: v1beta1.PipelineRunStatus{
-				PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-					PipelineSpec: &v1beta1.PipelineSpec{
-						Params: []v1beta1.ParamSpec{{
+		pipelineRunObject: objects.NewPipelineRunObject(&v1.PipelineRun{
+			Status: v1.PipelineRunStatus{
+				PipelineRunStatusFields: v1.PipelineRunStatusFields{
+					PipelineSpec: &v1.PipelineSpec{
+						Params: []v1.ParamSpec{{
 							Name: "CHAINS-GIT_COMMIT",
-							Default: &v1beta1.ParamValue{
+							Default: &v1.ParamValue{
 								StringVal: "my-commit",
 							},
 						}, {
 							Name: "CHAINS-GIT_URL",
-							Default: &v1beta1.ParamValue{
+							Default: &v1.ParamValue{
 								StringVal: "github.com/something",
 							},
 						}},
@@ -496,16 +498,16 @@ func TestFromPipelineParamsAndResults(t *testing.T) {
 		}},
 	}, {
 		name: "from pipelineRunSpec",
-		pipelineRunObject: objects.NewPipelineRunObject(&v1beta1.PipelineRun{
-			Spec: v1beta1.PipelineRunSpec{
-				Params: []v1beta1.Param{{
+		pipelineRunObject: objects.NewPipelineRunObject(&v1.PipelineRun{
+			Spec: v1.PipelineRunSpec{
+				Params: []v1.Param{{
 					Name: "CHAINS-GIT_COMMIT",
-					Value: v1beta1.ParamValue{
+					Value: v1.ParamValue{
 						StringVal: "my-commit",
 					},
 				}, {
 					Name: "CHAINS-GIT_URL",
-					Value: v1beta1.ParamValue{
+					Value: v1.ParamValue{
 						StringVal: "github.com/something",
 					},
 				}},
@@ -519,25 +521,25 @@ func TestFromPipelineParamsAndResults(t *testing.T) {
 		}},
 	}, {
 		name: "from completeChain",
-		pipelineRunObject: objects.NewPipelineRunObject(&v1beta1.PipelineRun{
-			Spec: v1beta1.PipelineRunSpec{
-				Params: []v1beta1.Param{{
+		pipelineRunObject: objects.NewPipelineRunObject(&v1.PipelineRun{
+			Spec: v1.PipelineRunSpec{
+				Params: []v1.Param{{
 					Name: "CHAINS-GIT_URL",
-					Value: v1beta1.ParamValue{
+					Value: v1.ParamValue{
 						StringVal: "github.com/something",
 					},
 				}},
 			},
-			Status: v1beta1.PipelineRunStatus{
-				PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-					PipelineSpec: &v1beta1.PipelineSpec{
-						Params: []v1beta1.ParamSpec{{
+			Status: v1.PipelineRunStatus{
+				PipelineRunStatusFields: v1.PipelineRunStatusFields{
+					PipelineSpec: &v1.PipelineSpec{
+						Params: []v1.ParamSpec{{
 							Name: "CHAINS-GIT_URL",
 						}},
 					},
-					PipelineResults: []v1beta1.PipelineRunResult{{
+					Results: []v1.PipelineRunResult{{
 						Name:  "CHAINS-GIT_COMMIT",
-						Value: *v1beta1.NewStructuredValues("my-commit"),
+						Value: *v1.NewStructuredValues("my-commit"),
 					}},
 				},
 			},
@@ -580,18 +582,18 @@ func TestFromPipelineParamsAndResults(t *testing.T) {
 
 //nolint:all
 func createProWithPipelineParamAndTaskResult() *objects.PipelineRunObject {
-	pro := objects.NewPipelineRunObject(&v1beta1.PipelineRun{
-		Status: v1beta1.PipelineRunStatus{
-			PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-				PipelineSpec: &v1beta1.PipelineSpec{
-					Params: []v1beta1.ParamSpec{{
+	pro := objects.NewPipelineRunObject(&v1.PipelineRun{
+		Status: v1.PipelineRunStatus{
+			PipelineRunStatusFields: v1.PipelineRunStatusFields{
+				PipelineSpec: &v1.PipelineSpec{
+					Params: []v1.ParamSpec{{
 						Name: "CHAINS-GIT_COMMIT",
-						Default: &v1beta1.ParamValue{
+						Default: &v1.ParamValue{
 							StringVal: "115734d92807a80158b4b7af605d768c647fdb3d",
 						},
 					}, {
 						Name: "CHAINS-GIT_URL",
-						Default: &v1beta1.ParamValue{
+						Default: &v1.ParamValue{
 							StringVal: "github.com/pipelinerun-param",
 						},
 					}},
@@ -601,15 +603,15 @@ func createProWithPipelineParamAndTaskResult() *objects.PipelineRunObject {
 	})
 
 	pipelineTaskName := "my-clone-task"
-	tr := &v1beta1.TaskRun{
+	tr := &v1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{objects.PipelineTaskLabel: pipelineTaskName}},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
 				CompletionTime: &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, time.UTC)},
-				TaskRunResults: []v1beta1.TaskRunResult{
+				Results: []v1.TaskRunResult{
 					{
 						Name: "ARTIFACT_INPUTS",
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "github.com/childtask-result",
 							"digest": "sha1:225734d92807a80158b4b7af605d768c647fdb3d",
 						})},
@@ -619,6 +621,6 @@ func createProWithPipelineParamAndTaskResult() *objects.PipelineRunObject {
 	}
 
 	pro.AppendTaskRun(tr)
-	pro.Status.PipelineSpec.Tasks = []v1beta1.PipelineTask{{Name: pipelineTaskName}}
+	pro.Status.PipelineSpec.Tasks = []v1.PipelineTask{{Name: pipelineTaskName}}
 	return pro
 }

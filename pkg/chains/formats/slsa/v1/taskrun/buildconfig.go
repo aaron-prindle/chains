@@ -19,7 +19,7 @@ package taskrun
 import (
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/attest"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 // BuildConfig is the custom Chains format to fill out the
@@ -45,7 +45,7 @@ func buildConfig(tro *objects.TaskRunObject) BuildConfig {
 	return BuildConfig{Steps: attestations}
 }
 
-func stepFromTaskRun(name string, tro *objects.TaskRunObject) *v1beta1.Step {
+func stepFromTaskRun(name string, tro *objects.TaskRunObject) *v1.Step {
 	if tro.Status.TaskSpec != nil {
 		for _, s := range tro.Status.TaskSpec.Steps {
 			if s.Name == name {
@@ -53,5 +53,5 @@ func stepFromTaskRun(name string, tro *objects.TaskRunObject) *v1beta1.Step {
 			}
 		}
 	}
-	return &v1beta1.Step{}
+	return &v1.Step{}
 }

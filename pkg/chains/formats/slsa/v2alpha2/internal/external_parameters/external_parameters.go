@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
-func buildConfigSource(provenance *v1beta1.Provenance) map[string]string {
+func buildConfigSource(provenance *v1.Provenance) map[string]string {
 	ref := ""
 	for alg, hex := range provenance.RefSource.Digest {
 		ref = fmt.Sprintf("%s:%s", alg, hex)

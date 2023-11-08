@@ -29,7 +29,7 @@ import (
 	"github.com/tektoncd/chains/pkg/chains/formats"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/extract"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -66,17 +66,17 @@ const (
 var (
 	// clone taskrun
 	// --------------
-	cloneTaskRun = &v1beta1.TaskRun{
+	cloneTaskRun = &v1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "git-clone",
 			UID:       types.UID("uid-task1"),
 		},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
-					{Name: "CHAINS-GIT_COMMIT", Value: *v1beta1.NewStructuredValues(commitSHA)},
-					{Name: "CHAINS-GIT_URL", Value: *v1beta1.NewStructuredValues(repoURL)},
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
+					{Name: "CHAINS-GIT_COMMIT", Value: *v1.NewStructuredValues(commitSHA)},
+					{Name: "CHAINS-GIT_URL", Value: *v1.NewStructuredValues(repoURL)},
 				},
 			},
 		},
@@ -100,19 +100,19 @@ var (
 	artifactIdentifier2 = fmt.Sprintf("%s@sha256:%s", artifactURL2, artifactDigest2)
 
 	// artifact build taskrun
-	buildTaskRun = &v1beta1.TaskRun{
+	buildTaskRun = &v1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "artifact-build",
 			UID:       types.UID("uid-task2"),
 		},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
-					{Name: "IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues("sha256:" + artifactDigest1)},
-					{Name: "IMAGE_URL", Value: *v1beta1.NewStructuredValues(artifactURL1)},
-					{Name: "x_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues("sha256:" + artifactDigest2)},
-					{Name: "x_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues(artifactURL2)},
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
+					{Name: "IMAGE_DIGEST", Value: *v1.NewStructuredValues("sha256:" + artifactDigest1)},
+					{Name: "IMAGE_URL", Value: *v1.NewStructuredValues(artifactURL1)},
+					{Name: "x_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues("sha256:" + artifactDigest2)},
+					{Name: "x_ARTIFACT_URI", Value: *v1.NewStructuredValues(artifactURL2)},
 				},
 			},
 		},
@@ -139,23 +139,23 @@ var (
 	}
 
 	// ci pipelinerun
-	ciPipeline = &v1beta1.PipelineRun{
+	ciPipeline = &v1.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "ci-pipeline",
 			UID:       types.UID("uid-pipeline"),
 		},
-		Status: v1beta1.PipelineRunStatus{
-			PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-				PipelineResults: []v1beta1.PipelineRunResult{
+		Status: v1.PipelineRunStatus{
+			PipelineRunStatusFields: v1.PipelineRunStatusFields{
+				Results: []v1.PipelineRunResult{
 					// the results from task 1 - clone
-					{Name: "CHAINS-GIT_COMMIT", Value: *v1beta1.NewStructuredValues(commitSHA)},
-					{Name: "CHAINS-GIT_URL", Value: *v1beta1.NewStructuredValues(repoURL)},
+					{Name: "CHAINS-GIT_COMMIT", Value: *v1.NewStructuredValues(commitSHA)},
+					{Name: "CHAINS-GIT_URL", Value: *v1.NewStructuredValues(repoURL)},
 					// the results from task 2 - build
-					{Name: "IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues("sha256:" + artifactDigest1)},
-					{Name: "IMAGE_URL", Value: *v1beta1.NewStructuredValues(artifactURL1)},
-					{Name: "x_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues("sha256:" + artifactDigest2)},
-					{Name: "x_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues(artifactURL2)},
+					{Name: "IMAGE_DIGEST", Value: *v1.NewStructuredValues("sha256:" + artifactDigest1)},
+					{Name: "IMAGE_URL", Value: *v1.NewStructuredValues(artifactURL1)},
+					{Name: "x_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues("sha256:" + artifactDigest2)},
+					{Name: "x_ARTIFACT_URI", Value: *v1.NewStructuredValues(artifactURL2)},
 				},
 			},
 		},

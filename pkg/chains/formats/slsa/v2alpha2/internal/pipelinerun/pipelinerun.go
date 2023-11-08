@@ -85,7 +85,7 @@ func metadata(pro *objects.PipelineRunObject) slsa.BuildMetadata {
 // byproducts contains the pipelineRunResults
 func byproducts(pro *objects.PipelineRunObject) ([]slsa.ResourceDescriptor, error) {
 	byProd := []slsa.ResourceDescriptor{}
-	for _, key := range pro.Status.PipelineResults {
+	for _, key := range pro.Status.Results {
 		content, err := json.Marshal(key.Value)
 		if err != nil {
 			return nil, err

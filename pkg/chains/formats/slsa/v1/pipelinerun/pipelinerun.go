@@ -25,7 +25,7 @@ import (
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/material"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/slsaconfig"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/logging"
@@ -38,13 +38,13 @@ type BuildConfig struct {
 type TaskAttestation struct {
 	Name       string                    `json:"name,omitempty"`
 	After      []string                  `json:"after,omitempty"`
-	Ref        v1beta1.TaskRef           `json:"ref,omitempty"`
+	Ref        v1.TaskRef           `json:"ref,omitempty"`
 	StartedOn  time.Time                 `json:"startedOn,omitempty"`
 	FinishedOn time.Time                 `json:"finishedOn,omitempty"`
 	Status     string                    `json:"status,omitempty"`
 	Steps      []attest.StepAttestation  `json:"steps,omitempty"`
 	Invocation slsa.ProvenanceInvocation `json:"invocation,omitempty"`
-	Results    []v1beta1.TaskRunResult   `json:"results,omitempty"`
+	Results    []v1.TaskRunResult   `json:"results,omitempty"`
 }
 
 func GenerateAttestation(ctx context.Context, pro *objects.PipelineRunObject, slsaConfig *slsaconfig.SlsaConfig) (interface{}, error) {
@@ -75,7 +75,7 @@ func GenerateAttestation(ctx context.Context, pro *objects.PipelineRunObject, sl
 }
 
 func invocation(pro *objects.PipelineRunObject) slsa.ProvenanceInvocation {
-	var paramSpecs []v1beta1.ParamSpec
+	var paramSpecs []v1.ParamSpec
 	if ps := pro.Status.PipelineSpec; ps != nil {
 		paramSpecs = ps.Params
 	}
@@ -110,7 +110,7 @@ func buildConfig(ctx context.Context, pro *objects.PipelineRunObject) BuildConfi
 
 		// Establish task order by retrieving all task's referenced
 		// in the "when" and "params" fields
-		refs := v1beta1.PipelineTaskResultRefs(&t)
+		refs := v1.PipelineTaskResultRefs(&t)
 		for _, ref := range refs {
 
 			// Ensure task doesn't already exist in after
@@ -132,11 +132,11 @@ func buildConfig(ctx context.Context, pro *objects.PipelineRunObject) BuildConfi
 		}
 
 		params := tr.Spec.Params
-		var paramSpecs []v1beta1.ParamSpec
+		var paramSpecs []v1.ParamSpec
 		if tr.Status.TaskSpec != nil {
 			paramSpecs = tr.Status.TaskSpec.Params
 		} else {
-			paramSpecs = []v1beta1.ParamSpec{}
+			paramSpecs = []v1.ParamSpec{}
 		}
 
 		task := TaskAttestation{
@@ -147,7 +147,7 @@ func buildConfig(ctx context.Context, pro *objects.PipelineRunObject) BuildConfi
 			Status:     getStatus(tr.Status.Conditions),
 			Steps:      steps,
 			Invocation: attest.Invocation(tr, params, paramSpecs),
-			Results:    tr.Status.TaskRunResults,
+			Results:    tr.Status.Results,
 		}
 
 		if t.TaskRef != nil {

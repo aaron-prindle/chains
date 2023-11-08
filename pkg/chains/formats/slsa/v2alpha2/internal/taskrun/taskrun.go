@@ -81,7 +81,7 @@ func metadata(tro *objects.TaskRunObject) slsa.BuildMetadata {
 // byproducts contains the taskRunResults
 func byproducts(tro *objects.TaskRunObject) ([]slsa.ResourceDescriptor, error) {
 	byProd := []slsa.ResourceDescriptor{}
-	for _, key := range tro.Status.TaskRunResults {
+	for _, key := range tro.Status.Results {
 		content, err := json.Marshal(key.Value)
 		if err != nil {
 			return nil, err

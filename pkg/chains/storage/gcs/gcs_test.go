@@ -23,7 +23,7 @@ import (
 	"github.com/tektoncd/chains/pkg/chains/objects"
 
 	"github.com/tektoncd/chains/pkg/config"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	rtesting "knative.dev/pkg/reconciler/testing"
@@ -32,8 +32,8 @@ import (
 //nolint:staticcheck
 func TestBackend_StorePayload(t *testing.T) {
 	type args struct {
-		tr        *v1beta1.TaskRun
-		pr        *v1beta1.PipelineRun
+		tr        *v1.TaskRun
+		pr        *v1.PipelineRun
 		signed    []byte
 		signature string
 		opts      config.StorageOpts
@@ -46,14 +46,14 @@ func TestBackend_StorePayload(t *testing.T) {
 		{
 			name: "no error, intoto",
 			args: args{
-				tr: &v1beta1.TaskRun{
+				tr: &v1.TaskRun{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "foo",
 						Name:      "bar",
 						UID:       types.UID("uid"),
 					},
 				},
-				pr: &v1beta1.PipelineRun{
+				pr: &v1.PipelineRun{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "foo",
 						Name:      "bar",
@@ -68,14 +68,14 @@ func TestBackend_StorePayload(t *testing.T) {
 		{
 			name: "no error, tekton",
 			args: args{
-				tr: &v1beta1.TaskRun{
+				tr: &v1.TaskRun{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "foo",
 						Name:      "bar",
 						UID:       types.UID("uid"),
 					},
 				},
-				pr: &v1beta1.PipelineRun{
+				pr: &v1.PipelineRun{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "foo",
 						Name:      "bar",

@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,8 +44,8 @@ type Object interface {
 // of Tekton operations. (eg. PipelineRun and TaskRun results)
 type Result struct {
 	Name  string
-	Type  v1beta1.ResultsType
-	Value v1beta1.ParamValue
+	Type  v1.ResultsType
+	Value v1.ParamValue
 }
 
 // Tekton object is an extended Kubernetes object with operations specific
@@ -58,7 +58,7 @@ type TektonObject interface {
 	GetLatestAnnotations(ctx context.Context, clientSet versioned.Interface) (map[string]string, error)
 	Patch(ctx context.Context, clientSet versioned.Interface, patchBytes []byte) error
 	GetResults() []Result
-	GetProvenance() *v1beta1.Provenance
+	GetProvenance() *v1.Provenance
 	GetServiceAccountName() string
 	GetPullSecrets() []string
 	IsDone() bool
@@ -66,29 +66,29 @@ type TektonObject interface {
 	SupportsTaskRunArtifact() bool
 	SupportsPipelineRunArtifact() bool
 	SupportsOCIArtifact() bool
-	GetRemoteProvenance() *v1beta1.Provenance
+	GetRemoteProvenance() *v1.Provenance
 	IsRemote() bool
 }
 
 func NewTektonObject(i interface{}) (TektonObject, error) {
 	switch o := i.(type) {
-	case *v1beta1.PipelineRun:
+	case *v1.PipelineRun:
 		return NewPipelineRunObject(o), nil
-	case *v1beta1.TaskRun:
+	case *v1.TaskRun:
 		return NewTaskRunObject(o), nil
 	default:
 		return nil, errors.New("unrecognized type when attempting to create tekton object")
 	}
 }
 
-// TaskRunObject extends v1beta1.TaskRun with additional functions.
+// TaskRunObject extends v1.TaskRun with additional functions.
 type TaskRunObject struct {
-	*v1beta1.TaskRun
+	*v1.TaskRun
 }
 
 var _ TektonObject = &TaskRunObject{}
 
-func NewTaskRunObject(tr *v1beta1.TaskRun) *TaskRunObject {
+func NewTaskRunObject(tr *v1.TaskRun) *TaskRunObject {
 	return &TaskRunObject{
 		tr,
 	}
@@ -103,13 +103,13 @@ func (tro *TaskRunObject) GetKindName() string {
 	return strings.ToLower(tro.GetGroupVersionKind().Kind)
 }
 
-func (tro *TaskRunObject) GetProvenance() *v1beta1.Provenance {
+func (tro *TaskRunObject) GetProvenance() *v1.Provenance {
 	return tro.Status.Provenance
 }
 
 // Get the latest annotations on the TaskRun
 func (tro *TaskRunObject) GetLatestAnnotations(ctx context.Context, clientSet versioned.Interface) (map[string]string, error) {
-	tr, err := clientSet.TektonV1beta1().TaskRuns(tro.Namespace).Get(ctx, tro.Name, metav1.GetOptions{})
+	tr, err := clientSet.TektonV1().TaskRuns(tro.Namespace).Get(ctx, tro.Name, metav1.GetOptions{})
 	return tr.Annotations, err
 }
 
@@ -120,7 +120,7 @@ func (tro *TaskRunObject) GetObject() interface{} {
 
 // Patch the original TaskRun object
 func (tro *TaskRunObject) Patch(ctx context.Context, clientSet versioned.Interface, patchBytes []byte) error {
-	_, err := clientSet.TektonV1beta1().TaskRuns(tro.Namespace).Patch(
+	_, err := clientSet.TektonV1().TaskRuns(tro.Namespace).Patch(
 		ctx, tro.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }
@@ -128,7 +128,7 @@ func (tro *TaskRunObject) Patch(ctx context.Context, clientSet versioned.Interfa
 // Get the TaskRun results
 func (tro *TaskRunObject) GetResults() []Result {
 	res := []Result{}
-	for _, key := range tro.Status.TaskRunResults {
+	for _, key := range tro.Status.Results {
 		res = append(res, Result{
 			Name:  key.Name,
 			Value: key.Value,
@@ -175,7 +175,7 @@ func (tro *TaskRunObject) SupportsOCIArtifact() bool {
 	return true
 }
 
-func (tro *TaskRunObject) GetRemoteProvenance() *v1beta1.Provenance {
+func (tro *TaskRunObject) GetRemoteProvenance() *v1.Provenance {
 	if t := tro.Status.Provenance; t != nil && t.RefSource != nil && tro.IsRemote() {
 		return tro.Status.Provenance
 	}
@@ -192,17 +192,17 @@ func (tro *TaskRunObject) IsRemote() bool {
 	return isRemoteTask
 }
 
-// PipelineRunObject extends v1beta1.PipelineRun with additional functions.
+// PipelineRunObject extends v1.PipelineRun with additional functions.
 type PipelineRunObject struct {
 	// The base PipelineRun
-	*v1beta1.PipelineRun
+	*v1.PipelineRun
 	// taskRuns that were apart of this PipelineRun
-	taskRuns []*v1beta1.TaskRun
+	taskRuns []*v1.TaskRun
 }
 
 var _ TektonObject = &PipelineRunObject{}
 
-func NewPipelineRunObject(pr *v1beta1.PipelineRun) *PipelineRunObject {
+func NewPipelineRunObject(pr *v1.PipelineRun) *PipelineRunObject {
 	return &PipelineRunObject{
 		PipelineRun: pr,
 	}
@@ -219,7 +219,7 @@ func (pro *PipelineRunObject) GetKindName() string {
 
 // Request the current annotations on the PipelineRun object
 func (pro *PipelineRunObject) GetLatestAnnotations(ctx context.Context, clientSet versioned.Interface) (map[string]string, error) {
-	pr, err := clientSet.TektonV1beta1().PipelineRuns(pro.Namespace).Get(ctx, pro.Name, metav1.GetOptions{})
+	pr, err := clientSet.TektonV1().PipelineRuns(pro.Namespace).Get(ctx, pro.Name, metav1.GetOptions{})
 	return pr.Annotations, err
 }
 
@@ -230,19 +230,19 @@ func (pro *PipelineRunObject) GetObject() interface{} {
 
 // Patch the original PipelineRun object
 func (pro *PipelineRunObject) Patch(ctx context.Context, clientSet versioned.Interface, patchBytes []byte) error {
-	_, err := clientSet.TektonV1beta1().PipelineRuns(pro.Namespace).Patch(
+	_, err := clientSet.TektonV1().PipelineRuns(pro.Namespace).Patch(
 		ctx, pro.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }
 
-func (pro *PipelineRunObject) GetProvenance() *v1beta1.Provenance {
+func (pro *PipelineRunObject) GetProvenance() *v1.Provenance {
 	return pro.Status.Provenance
 }
 
 // Get the resolved Pipelinerun results
 func (pro *PipelineRunObject) GetResults() []Result {
 	res := []Result{}
-	for _, key := range pro.Status.PipelineResults {
+	for _, key := range pro.Status.Results {
 		res = append(res, Result{
 			Name:  key.Name,
 			Value: key.Value,
@@ -253,7 +253,7 @@ func (pro *PipelineRunObject) GetResults() []Result {
 
 // Get the ServiceAccount declared in the PipelineRun
 func (pro *PipelineRunObject) GetServiceAccountName() string {
-	return pro.Spec.ServiceAccountName
+	return pro.Spec.TaskRunTemplate.ServiceAccountName
 }
 
 // Get the ServiceAccount declared in the PipelineRun
@@ -262,7 +262,7 @@ func (pro *PipelineRunObject) IsSuccessful() bool {
 }
 
 // Append TaskRuns to this PipelineRun
-func (pro *PipelineRunObject) AppendTaskRun(tr *v1beta1.TaskRun) {
+func (pro *PipelineRunObject) AppendTaskRun(tr *v1.TaskRun) {
 	pro.taskRuns = append(pro.taskRuns, tr)
 }
 
@@ -279,7 +279,7 @@ func (pro *PipelineRunObject) GetTaskRunFromTask(taskName string) *TaskRunObject
 
 // Get the imgPullSecrets from the pod template
 func (pro *PipelineRunObject) GetPullSecrets() []string {
-	return getPodPullSecrets(pro.Spec.PodTemplate)
+	return getPodPullSecrets(pro.Spec.TaskRunTemplate.PodTemplate)
 }
 
 func (pro *PipelineRunObject) SupportsTaskRunArtifact() bool {
@@ -294,7 +294,7 @@ func (pro *PipelineRunObject) SupportsOCIArtifact() bool {
 	return false
 }
 
-func (pro *PipelineRunObject) GetRemoteProvenance() *v1beta1.Provenance {
+func (pro *PipelineRunObject) GetRemoteProvenance() *v1.Provenance {
 	if p := pro.Status.Provenance; p != nil && p.RefSource != nil && pro.IsRemote() {
 		return pro.Status.Provenance
 	}

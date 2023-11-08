@@ -23,13 +23,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/tektoncd/chains/pkg/chains/objects"
 	"github.com/tektoncd/chains/pkg/internal/objectloader"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 func TestBuildConfigSource(t *testing.T) {
 	digest := map[string]string{"alg1": "hex1", "alg2": "hex2"}
-	provenance := &v1beta1.Provenance{
-		RefSource: &v1beta1.RefSource{
+	provenance := &v1.Provenance{
+		RefSource: &v1.RefSource{
 			Digest:     digest,
 			URI:        "https://tekton.com",
 			EntryPoint: "/path/to/entry",
@@ -90,15 +90,17 @@ func TestPipelineRun(t *testing.T) {
 	got := PipelineRun(pro)
 
 	want := map[string]any{
-		"runSpec": v1beta1.PipelineRunSpec{
-			PipelineRef: &v1beta1.PipelineRef{Name: "test-pipeline"},
-			Params: v1beta1.Params{
+		"runSpec": v1.PipelineRunSpec{
+			PipelineRef: &v1.PipelineRef{Name: "test-pipeline"},
+			Params: v1.Params{
 				{
 					Name:  "IMAGE",
-					Value: v1beta1.ParamValue{Type: "string", StringVal: "test.io/test/image"},
+					Value: v1.ParamValue{Type: "string", StringVal: "test.io/test/image"},
 				},
 			},
-			ServiceAccountName: "pipeline",
+			TaskRunTemplate: v1.PipelineTaskRunTemplate{
+				ServiceAccountName: "pipeline",
+			},
 		},
 	}
 
@@ -115,14 +117,14 @@ func TestTaskRun(t *testing.T) {
 	got := TaskRun(objects.NewTaskRunObject(tr))
 
 	want := map[string]any{
-		"runSpec": v1beta1.TaskRunSpec{
-			Params: v1beta1.Params{
-				{Name: "IMAGE", Value: v1beta1.ParamValue{Type: "string", StringVal: "test.io/test/image"}},
-				{Name: "CHAINS-GIT_COMMIT", Value: v1beta1.ParamValue{Type: "string", StringVal: "taskrun"}},
-				{Name: "CHAINS-GIT_URL", Value: v1beta1.ParamValue{Type: "string", StringVal: "https://git.test.com"}},
+		"runSpec": v1.TaskRunSpec{
+			Params: v1.Params{
+				{Name: "IMAGE", Value: v1.ParamValue{Type: "string", StringVal: "test.io/test/image"}},
+				{Name: "CHAINS-GIT_COMMIT", Value: v1.ParamValue{Type: "string", StringVal: "taskrun"}},
+				{Name: "CHAINS-GIT_URL", Value: v1.ParamValue{Type: "string", StringVal: "https://git.test.com"}},
 			},
 			ServiceAccountName: "default",
-			TaskRef:            &v1beta1.TaskRef{Name: "build", Kind: "Task"},
+			TaskRef:            &v1.TaskRef{Name: "build", Kind: "Task"},
 		},
 	}
 

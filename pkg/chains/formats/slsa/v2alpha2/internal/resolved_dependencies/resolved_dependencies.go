@@ -199,8 +199,6 @@ func taskDependencies(ctx context.Context, tr *objects.TaskRunObject) ([]v1.Reso
 	// convert materials to resolved dependencies
 	resolvedDependencies = append(resolvedDependencies, convertMaterialsToResolvedDependencies(mats, inputResultName)...)
 
-	// add task resources
-	mats = material.FromTaskResources(ctx, tr)
 	// convert materials to resolved dependencies
 	resolvedDependencies = append(resolvedDependencies, convertMaterialsToResolvedDependencies(mats, pipelineResourceName)...)
 

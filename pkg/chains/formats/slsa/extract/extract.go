@@ -24,12 +24,11 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
-	"github.com/tektoncd/chains/internal/backport"
 	"github.com/tektoncd/chains/pkg/artifacts"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/artifact"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/slsaconfig"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/logging"
 )
 
@@ -46,9 +45,9 @@ func SubjectDigests(ctx context.Context, obj objects.TektonObject, slsaconfig *s
 	var subjects []intoto.Subject
 
 	switch obj.GetObject().(type) {
-	case *v1beta1.PipelineRun:
+	case *v1.PipelineRun:
 		subjects = subjectsFromPipelineRun(ctx, obj, slsaconfig)
-	case *v1beta1.TaskRun:
+	case *v1.TaskRun:
 		subjects = subjectsFromTektonObject(ctx, obj)
 	}
 
@@ -140,38 +139,10 @@ func subjectsFromTektonObject(ctx context.Context, obj objects.TektonObject) []i
 	// PipelineResources have been deprecated so their support has been left out of
 	// the POC for TEP-84
 	// More info: https://tekton.dev/docs/pipelines/resources/
-	tr, ok := obj.GetObject().(*v1beta1.TaskRun)
-	if !ok || tr.Spec.Resources == nil {
+	tr, ok := obj.GetObject().(*v1.TaskRun)
+	if !ok || tr.Status.TaskSpec.Results == nil {
+		// if !ok || tr.Spec.Resources == nil {
 		return subjects
-	}
-
-	// go through resourcesResult
-	for _, output := range tr.Spec.Resources.Outputs {
-		name := output.Name
-		if output.PipelineResourceBinding.ResourceSpec == nil {
-			continue
-		}
-		// similarly, we could do this for other pipeline resources or whatever thing replaces them
-		if output.PipelineResourceBinding.ResourceSpec.Type == backport.PipelineResourceTypeImage {
-			// get the url and digest, and save as a subject
-			var url, digest string
-			for _, s := range tr.Status.ResourcesResult {
-				if s.ResourceName == name {
-					if s.Key == "url" {
-						url = s.Value
-					}
-					if s.Key == "digest" {
-						digest = s.Value
-					}
-				}
-			}
-			subjects = artifact.AppendSubjects(subjects, intoto.Subject{
-				Name: url,
-				Digest: common.DigestSet{
-					"sha256": strings.TrimPrefix(digest, "sha256:"),
-				},
-			})
-		}
 	}
 
 	return subjects

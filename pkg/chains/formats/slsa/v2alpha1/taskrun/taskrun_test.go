@@ -27,7 +27,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/in-toto/in-toto-golang/in_toto"
-	"github.com/tektoncd/chains/internal/backport"
 	"github.com/tektoncd/chains/pkg/artifacts"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/extract"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/compare"
@@ -35,11 +34,9 @@ import (
 	"github.com/tektoncd/chains/pkg/chains/objects"
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logtesting "knative.dev/pkg/logging/testing"
 	"sigs.k8s.io/yaml"
 )
@@ -53,18 +50,18 @@ const (
 )
 
 func TestMetadata(t *testing.T) {
-	tr := &v1beta1.TaskRun{
-		ObjectMeta: v1.ObjectMeta{
+	tr := &v1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-taskrun",
 			Namespace: "my-namespace",
 			Annotations: map[string]string{
 				"chains.tekton.dev/reproducible": "true",
 			},
 		},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				StartTime:      &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, time.UTC)},
-				CompletionTime: &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, time.UTC)},
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				StartTime:      &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, time.UTC)},
+				CompletionTime: &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, time.UTC)},
 			},
 		},
 	}
@@ -82,18 +79,18 @@ func TestMetadata(t *testing.T) {
 
 func TestMetadataInTimeZone(t *testing.T) {
 	tz := time.FixedZone("Test Time", int((12 * time.Hour).Seconds()))
-	tr := &v1beta1.TaskRun{
-		ObjectMeta: v1.ObjectMeta{
+	tr := &v1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-taskrun",
 			Namespace: "my-namespace",
 			Annotations: map[string]string{
 				"chains.tekton.dev/reproducible": "true",
 			},
 		},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				StartTime:      &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, tz)},
-				CompletionTime: &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, tz)},
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				StartTime:      &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, tz)},
+				CompletionTime: &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, tz)},
 			},
 		},
 	}
@@ -110,7 +107,9 @@ func TestMetadataInTimeZone(t *testing.T) {
 }
 
 func TestInvocation(t *testing.T) {
-	taskrun := `apiVersion: tekton.dev/v1beta1
+	// TODO(aaron-prindle) properly update the below taskrun to be v1
+	// taskrun := `apiVersion: tekton.dev/v1beta1
+	taskrun := `apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   uid: my-uid
@@ -167,40 +166,43 @@ status:
       RunningInEnvWithInjectedSidecars: true
 `
 
-	var taskRun *v1beta1.TaskRun
+	var taskRun *v1.TaskRun
 	if err := yaml.Unmarshal([]byte(taskrun), &taskRun); err != nil {
 		t.Fatal(err)
 	}
 
 	expected := slsa.ProvenanceInvocation{
 		Parameters: map[string]any{
-			"Params": v1beta1.Params{
+			"Params": v1.Params{
 				{
 					Name:  "my-param",
-					Value: v1beta1.ParamValue{Type: "string", StringVal: "string-param"},
+					Value: v1.ParamValue{Type: "string", StringVal: "string-param"},
 				},
 				{
 					Name:  "my-array-param",
-					Value: v1beta1.ParamValue{Type: "array", ArrayVal: []string{"my", "array"}},
+					Value: v1.ParamValue{Type: "array", ArrayVal: []string{"my", "array"}},
 				},
-				{Name: "my-empty-string-param", Value: v1beta1.ParamValue{Type: "string"}},
+				{Name: "my-empty-string-param", Value: v1.ParamValue{Type: "string"}},
 				{
 					Name:  "my-empty-array-param",
-					Value: v1beta1.ParamValue{Type: "array", ArrayVal: []string{}},
+					Value: v1.ParamValue{Type: "array", ArrayVal: []string{}},
 				},
 			},
-			"ComputeResources":   (*corev1.ResourceRequirements)(nil),
-			"Debug":              (*v1beta1.TaskRunDebug)(nil),
-			"PodTemplate":        (*pod.Template)(nil),
-			"Resources":          (*v1beta1.TaskRunResources)(nil),
+			"ComputeResources": (*corev1.ResourceRequirements)(nil),
+			"Debug":            (*v1.TaskRunDebug)(nil),
+			"PodTemplate":      (*pod.Template)(nil),
+			// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+			// "Resources":          (*v1.TaskRunResources)(nil),
 			"Retries":            0,
-			"ServiceAccountName": "",
-			"SidecarOverrides":   []v1beta1.TaskRunSidecarOverride(nil),
-			"Status":             v1beta1.TaskRunSpecStatus(""),
-			"StatusMessage":      v1beta1.TaskRunSpecStatusMessage(""),
-			"StepOverrides":      []v1beta1.TaskRunStepOverride(nil),
-			"Timeout":            (*metav1.Duration)(nil),
-			"Workspaces":         []v1beta1.WorkspaceBinding(nil),
+			"ServiceAccountName": "default",
+			"SidecarSpecs":       []v1.TaskRunSidecarSpec(nil),
+			// "SidecarOverrides":   []v1.TaskRunSidecarOverride(nil),
+			"Status":        v1.TaskRunSpecStatus(""),
+			"StatusMessage": v1.TaskRunSpecStatusMessage(""),
+			"StepSpecs":     []v1.TaskRunStepSpec(nil),
+			// "StepOverrides": []v1.TaskRunStepOverride(nil),
+			"Timeout":    (*metav1.Duration)(nil),
+			"Workspaces": []v1.WorkspaceBinding(nil),
 		},
 		Environment: map[string]any{
 			"tekton-pipelines-feature-flags": &config.FeatureFlags{
@@ -224,97 +226,101 @@ status:
 }
 
 func TestGetSubjectDigests(t *testing.T) {
-	tr := &v1beta1.TaskRun{
-		Spec: v1beta1.TaskRunSpec{
-			Resources: &v1beta1.TaskRunResources{
-				Outputs: []v1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: "nil-check",
-						},
-					}, {
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: "built-image",
-							ResourceSpec: &v1alpha1.PipelineResourceSpec{
-								Type: backport.PipelineResourceTypeImage,
-							},
-						},
-					},
-				},
-			},
+	tr := &v1.TaskRun{
+		Spec: v1.TaskRunSpec{
+			// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+			// Resources: &v1.TaskRunResources{
+			// 	Outputs: []v1.TaskResourceBinding{
+			// 		{
+			// 			PipelineResourceBinding: v1.PipelineResourceBinding{
+			// 				Name: "nil-check",
+			// 			},
+			// 		}, {
+			// 			PipelineResourceBinding: v1.PipelineResourceBinding{
+			// 				Name: "built-image",
+			// 				ResourceSpec: &v1alpha1.PipelineResourceSpec{
+			// 					Type: backport.PipelineResourceTypeImage,
+			// 				},
+			// 			},
+			// 		},
+			// 	},
+			// },
 		},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
 					{
 						Name:  "IMAGE_URL",
-						Value: *v1beta1.NewStructuredValues("registry/myimage"),
+						Value: *v1.NewStructuredValues("registry/myimage"),
 					},
 					{
 						Name:  "IMAGE_DIGEST",
-						Value: *v1beta1.NewStructuredValues(digest1),
+						Value: *v1.NewStructuredValues(digest1),
 					},
 					{
 						Name:  "mvn1_ARTIFACT_URI",
-						Value: *v1beta1.NewStructuredValues("maven-test-0.1.1.jar"),
+						Value: *v1.NewStructuredValues("maven-test-0.1.1.jar"),
 					},
 					{
 						Name:  "mvn1_ARTIFACT_DIGEST",
-						Value: *v1beta1.NewStructuredValues(digest3),
+						Value: *v1.NewStructuredValues(digest3),
 					},
 					{
 						Name:  "mvn1_pom_ARTIFACT_URI",
-						Value: *v1beta1.NewStructuredValues("maven-test-0.1.1.pom"),
+						Value: *v1.NewStructuredValues("maven-test-0.1.1.pom"),
 					},
 					{
 						Name:  "mvn1_pom_ARTIFACT_DIGEST",
-						Value: *v1beta1.NewStructuredValues(digest4),
+						Value: *v1.NewStructuredValues(digest4),
 					},
 					{
 						Name:  "mvn1_src_ARTIFACT_URI",
-						Value: *v1beta1.NewStructuredValues("maven-test-0.1.1-sources.jar"),
+						Value: *v1.NewStructuredValues("maven-test-0.1.1-sources.jar"),
 					},
 					{
 						Name:  "mvn1_src_ARTIFACT_DIGEST",
-						Value: *v1beta1.NewStructuredValues(digest5),
+						Value: *v1.NewStructuredValues(digest5),
 					},
 					{
 						Name:  "invalid_ARTIFACT_DIGEST",
-						Value: *v1beta1.NewStructuredValues(digest5),
+						Value: *v1.NewStructuredValues(digest5),
 					},
 					{
 						Name: "mvn1_pkg" + "-" + artifacts.ArtifactsOutputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "projects/test-project-1/locations/us-west4/repositories/test-repo/mavenArtifacts/com.google.guava:guava:31.0-jre",
 							"digest": digest1,
 						}),
 					},
 					{
 						Name: "mvn1_pom_sha512" + "-" + artifacts.ArtifactsOutputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "com.google.guava:guava:1.0-jre.pom",
 							"digest": digest2,
 						}),
 					},
 					{
 						Name: "img1_input" + "-" + artifacts.ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest3,
 						}),
 					},
 				},
-				ResourcesResult: []v1beta1.PipelineResourceResult{
-					{
-						ResourceName: "built-image",
-						Key:          "url",
-						Value:        "registry/resource-image",
-					}, {
-						ResourceName: "built-image",
-						Key:          "digest",
-						Value:        digest2,
-					},
-				},
+				// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+				// ResourcesResult: []v1.PipelineResourceResult{
+				// 	{
+				// 		ResourceName: "built-image",
+				// 		Key:          "url",
+				// 		Value:        "registry/resource-image",
+				// 	}, {
+				// 		ResourceName: "built-image",
+				// 		Key:          "digest",
+				// 		Value:        digest2,
+				// 	},
+				// },
 			},
 		},
 	}

@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
-	"github.com/tektoncd/chains/internal/backport"
 	"github.com/tektoncd/chains/pkg/artifacts"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/attest"
 	"github.com/tektoncd/chains/pkg/chains/formats/slsa/internal/artifact"
@@ -55,9 +54,6 @@ func TaskMaterials(ctx context.Context, tro *objects.TaskRunObject) ([]common.Pr
 	mats = artifact.AppendMaterials(mats, sidecarMaterials...)
 
 	mats = artifact.AppendMaterials(mats, FromTaskParamsAndResults(ctx, tro)...)
-
-	// add task resources
-	mats = artifact.AppendMaterials(mats, FromTaskResources(ctx, tro)...)
 
 	return mats, nil
 }
@@ -157,48 +153,6 @@ func fromImageID(imageID string) (common.ProvenanceMaterial, error) {
 	return m, nil
 }
 
-// FromTaskResourcesToMaterials gets materials from task resources.
-func FromTaskResources(ctx context.Context, tro *objects.TaskRunObject) []common.ProvenanceMaterial {
-	mats := []common.ProvenanceMaterial{}
-	if tro.Spec.Resources != nil { //nolint:all //incompatible with pipelines v0.45
-		// check for a Git PipelineResource
-		for _, input := range tro.Spec.Resources.Inputs { //nolint:all //incompatible with pipelines v0.45
-			if input.ResourceSpec == nil || input.ResourceSpec.Type != backport.PipelineResourceTypeGit { //nolint:all //incompatible with pipelines v0.45
-				continue
-			}
-
-			m := common.ProvenanceMaterial{
-				Digest: common.DigestSet{},
-			}
-
-			for _, rr := range tro.Status.ResourcesResult {
-				if rr.ResourceName != input.Name {
-					continue
-				}
-				if rr.Key == "url" {
-					m.URI = attest.SPDXGit(rr.Value, "")
-				} else if rr.Key == "commit" {
-					m.Digest["sha1"] = rr.Value
-				}
-			}
-
-			var url string
-			var revision string
-			for _, param := range input.ResourceSpec.Params {
-				if param.Name == "url" {
-					url = param.Value
-				}
-				if param.Name == "revision" {
-					revision = param.Value
-				}
-			}
-			m.URI = attest.SPDXGit(url, revision)
-			mats = artifact.AppendMaterials(mats, m)
-		}
-	}
-	return mats
-}
-
 // FromTaskParamsAndResults scans over the taskrun, taskspec params and taskrun results
 // and looks for unstructured type hinted names matching CHAINS-GIT_COMMIT and CHAINS-GIT_URL
 // to extract the commit and url value for input artifact materials.
@@ -230,7 +184,7 @@ func FromTaskParamsAndResults(ctx context.Context, tro *objects.TaskRunObject) [
 		}
 	}
 
-	for _, r := range tro.Status.TaskRunResults {
+	for _, r := range tro.Status.Results {
 		if r.Name == attest.CommitParam {
 			commit = r.Value.StringVal
 		}
@@ -308,15 +262,16 @@ func FromPipelineParamsAndResults(ctx context.Context, pro *objects.PipelineRunO
 		}
 	}
 
-	// search status.PipelineRunResults
-	for _, r := range pro.Status.PipelineResults {
-		if r.Name == attest.CommitParam {
-			commit = r.Value.StringVal
-		}
-		if r.Name == attest.URLParam {
-			url = r.Value.StringVal
-		}
-	}
+	// search status.Results
+	// for _, r := range pro.Status.Results {
+	// 	if r.Name == attest.CommitParam {
+	// 		commit = r.Value.StringVal
+	// 	}
+	// 	if r.Name == attest.URLParam {
+	// 		url = r.Value.StringVal
+	// 	}
+	// }
+
 	if len(commit) > 0 && len(url) > 0 {
 		url = attest.SPDXGit(url, "")
 		mats = artifact.AppendMaterials(mats, common.ProvenanceMaterial{

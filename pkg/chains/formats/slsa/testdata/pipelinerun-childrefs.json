@@ -113,13 +113,13 @@
         },
         "childReferences": [
             {
-                "apiVersion": "tekton.dev/v1beta1",
+                "apiVersion": "tekton.dev/v1",
                 "kind": "TaskRun",
                 "name": "git-clone",
                 "pipelineTaskName": "git-clone"
             },
             {
-                "apiVersion": "tekton.dev/v1beta1",
+                "apiVersion": "tekton.dev/v1",
                 "kind": "TaskRun",
                 "name": "taskrun-build",
                 "pipelineTaskName": "build"

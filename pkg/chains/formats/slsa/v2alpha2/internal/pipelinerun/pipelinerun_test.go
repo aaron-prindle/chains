@@ -34,14 +34,14 @@ import (
 	resolveddependencies "github.com/tektoncd/chains/pkg/chains/formats/slsa/v2alpha2/internal/resolved_dependencies"
 	"github.com/tektoncd/chains/pkg/chains/objects"
 	"github.com/tektoncd/chains/pkg/internal/objectloader"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logtesting "knative.dev/pkg/logging/testing"
 )
 
 func TestMetadata(t *testing.T) {
-	pr := &v1beta1.PipelineRun{ //nolint:staticcheck
-		ObjectMeta: v1.ObjectMeta{
+	pr := &v1.PipelineRun{ //nolint:staticcheck
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-taskrun",
 			Namespace: "my-namespace",
 			Annotations: map[string]string{
@@ -49,10 +49,10 @@ func TestMetadata(t *testing.T) {
 			},
 			UID: "abhhf-12354-asjsdbjs23-3435353n",
 		},
-		Status: v1beta1.PipelineRunStatus{
-			PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-				StartTime:      &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, time.UTC)},
-				CompletionTime: &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, time.UTC)},
+		Status: v1.PipelineRunStatus{
+			PipelineRunStatusFields: v1.PipelineRunStatusFields{
+				StartTime:      &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, time.UTC)},
+				CompletionTime: &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, time.UTC)},
 			},
 		},
 	}
@@ -71,8 +71,8 @@ func TestMetadata(t *testing.T) {
 
 func TestMetadataInTimeZone(t *testing.T) {
 	tz := time.FixedZone("Test Time", int((12 * time.Hour).Seconds()))
-	pr := &v1beta1.PipelineRun{ //nolint:staticcheck
-		ObjectMeta: v1.ObjectMeta{
+	pr := &v1.PipelineRun{ //nolint:staticcheck
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-taskrun",
 			Namespace: "my-namespace",
 			Annotations: map[string]string{
@@ -80,10 +80,10 @@ func TestMetadataInTimeZone(t *testing.T) {
 			},
 			UID: "abhhf-12354-asjsdbjs23-3435353n",
 		},
-		Status: v1beta1.PipelineRunStatus{
-			PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-				StartTime:      &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, tz)},
-				CompletionTime: &v1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, tz)},
+		Status: v1.PipelineRunStatus{
+			PipelineRunStatusFields: v1.PipelineRunStatusFields{
+				StartTime:      &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 12, tz)},
+				CompletionTime: &metav1.Time{Time: time.Date(1995, time.December, 24, 6, 12, 12, 24, tz)},
 			},
 		},
 	}
@@ -101,11 +101,11 @@ func TestMetadataInTimeZone(t *testing.T) {
 }
 
 func TestByProducts(t *testing.T) {
-	resultValue := v1beta1.ResultValue{Type: "string", StringVal: "result-value"}
-	pr := &v1beta1.PipelineRun{ //nolint:staticcheck
-		Status: v1beta1.PipelineRunStatus{
-			PipelineRunStatusFields: v1beta1.PipelineRunStatusFields{
-				PipelineResults: []v1beta1.PipelineRunResult{
+	resultValue := v1.ResultValue{Type: "string", StringVal: "result-value"}
+	pr := &v1.PipelineRun{ //nolint:staticcheck
+		Status: v1.PipelineRunStatus{
+			PipelineRunStatusFields: v1.PipelineRunStatusFields{
+				Results: []v1.PipelineRunResult{
 					{
 						Name:  "result-name",
 						Value: resultValue,

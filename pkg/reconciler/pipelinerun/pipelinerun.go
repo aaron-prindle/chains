@@ -19,10 +19,10 @@ import (
 
 	signing "github.com/tektoncd/chains/pkg/chains"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	pipelinerunreconciler "github.com/tektoncd/pipeline/pkg/client/injection/reconciler/pipeline/v1beta1/pipelinerun"
-	listers "github.com/tektoncd/pipeline/pkg/client/listers/pipeline/v1beta1"
+	pipelinerunreconciler "github.com/tektoncd/pipeline/pkg/client/injection/reconciler/pipeline/v1/pipelinerun"
+	listers "github.com/tektoncd/pipeline/pkg/client/listers/pipeline/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"knative.dev/pkg/logging"
 	pkgreconciler "knative.dev/pkg/reconciler"
@@ -47,7 +47,7 @@ var _ pipelinerunreconciler.Finalizer = (*Reconciler)(nil)
 
 // ReconcileKind  handles a changed or created PipelineRun.
 // This is the main entrypoint for chains business logic.
-func (r *Reconciler) ReconcileKind(ctx context.Context, pr *v1beta1.PipelineRun) pkgreconciler.Event {
+func (r *Reconciler) ReconcileKind(ctx context.Context, pr *v1.PipelineRun) pkgreconciler.Event {
 	log := logging.FromContext(ctx).With("pipelinerun", fmt.Sprintf("%s/%s", pr.Namespace, pr.Name))
 	return r.FinalizeKind(logging.WithLogger(ctx, log), pr)
 }
@@ -56,7 +56,7 @@ func (r *Reconciler) ReconcileKind(ctx context.Context, pr *v1beta1.PipelineRun)
 // We utilize finalizers to ensure that we get a crack at signing every pipelinerun
 // that we see flowing through the system.  If we don't add a finalizer, it could
 // get cleaned up before we see the final state and sign it.
-func (r *Reconciler) FinalizeKind(ctx context.Context, pr *v1beta1.PipelineRun) pkgreconciler.Event {
+func (r *Reconciler) FinalizeKind(ctx context.Context, pr *v1.PipelineRun) pkgreconciler.Event {
 	// Check to make sure the PipelineRun is finished.
 	if !pr.IsDone() {
 		logging.FromContext(ctx).Infof("pipelinerun is still running")
@@ -72,22 +72,25 @@ func (r *Reconciler) FinalizeKind(ctx context.Context, pr *v1beta1.PipelineRun) 
 
 	// Get TaskRun names depending on whether embeddedstatus feature is set or not
 	var trs []string
-	if len(pr.Status.ChildReferences) == 0 || len(pr.Status.TaskRuns) > 0 || len(pr.Status.Runs) > 0 { //nolint:all //incompatible with pipelines v0.45
-		for trName, ptrs := range pr.Status.TaskRuns { //nolint:all //incompatible with pipelines v0.45
-			// TaskRuns within a PipelineRun may not have been finalized yet if the PipelineRun timeout
-			// has exceeded. Wait to process the PipelineRun on the next update, see
-			// https://github.com/tektoncd/pipeline/issues/4916
-			if ptrs.Status == nil || ptrs.Status.CompletionTime == nil {
-				logging.FromContext(ctx).Infof("taskrun %s within pipelinerun is not yet finalized: embedded status is not complete", trName)
-				return nil
-			}
-			trs = append(trs, trName)
-		}
-	} else {
-		for _, cr := range pr.Status.ChildReferences {
-			trs = append(trs, cr.Name)
-		}
-	}
+
+	// TODO(aaron-prindle) FIX - currently commented out as proper v1 replacements for missing fields not known
+
+	// if len(pr.Status.ChildReferences) == 0 || len(pr.Status.TaskRuns) > 0 || len(pr.Status.Runs) > 0 { //nolint:all //incompatible with pipelines v0.45
+	// 	for trName, ptrs := range pr.Status.TaskRuns { //nolint:all //incompatible with pipelines v0.45
+	// 		// TaskRuns within a PipelineRun may not have been finalized yet if the PipelineRun timeout
+	// 		// has exceeded. Wait to process the PipelineRun on the next update, see
+	// 		// https://github.com/tektoncd/pipeline/issues/4916
+	// 		if ptrs.Status == nil || ptrs.Status.CompletionTime == nil {
+	// 			logging.FromContext(ctx).Infof("taskrun %s within pipelinerun is not yet finalized: embedded status is not complete", trName)
+	// 			return nil
+	// 		}
+	// 		trs = append(trs, trName)
+	// 	}
+	// } else {
+	// 	for _, cr := range pr.Status.ChildReferences {
+	// 		trs = append(trs, cr.Name)
+	// 	}
+	// }
 
 	// Signing both taskruns and pipelineruns causes a race condition when using oci storage
 	// during the push to the registry. This checks the taskruns to ensure they've been reconciled
@@ -125,9 +128,9 @@ func (r *Reconciler) FinalizeKind(ctx context.Context, pr *v1beta1.PipelineRun) 
 	return nil
 }
 
-func (r *Reconciler) trackTaskRun(tr *v1beta1.TaskRun, pr *v1beta1.PipelineRun) error {
+func (r *Reconciler) trackTaskRun(tr *v1.TaskRun, pr *v1.PipelineRun) error {
 	ref := tracker.Reference{
-		APIVersion: "tekton.dev/v1beta1",
+		APIVersion: "tekton.dev/v1",
 		Kind:       "TaskRun",
 		Namespace:  tr.Namespace,
 		Name:       tr.Name,

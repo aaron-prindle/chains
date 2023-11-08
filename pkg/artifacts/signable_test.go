@@ -23,7 +23,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"github.com/tektoncd/chains/pkg/chains/objects"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logtesting "knative.dev/pkg/logging/testing"
 )
@@ -52,89 +52,93 @@ func TestOCIArtifact_ExtractObjects(t *testing.T) {
 	}{
 		{
 			name: "one image",
-			obj: objects.NewTaskRunObject(&v1beta1.TaskRun{
+			obj: objects.NewTaskRunObject(&v1.TaskRun{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "TaskRun",
 				},
-				Status: v1beta1.TaskRunStatus{
-					TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-						ResourcesResult: []v1beta1.PipelineResourceResult{
-							{
-								ResourceName: "my-image",
-								Key:          "url",
-								Value:        "gcr.io/foo/bar",
-							},
-							{
-								ResourceName: "my-image",
-								Key:          "digest",
-								Value:        digest1,
-							},
-						},
-						TaskSpec: &v1beta1.TaskSpec{
-							Resources: &v1beta1.TaskResources{
-								Outputs: []v1beta1.TaskResource{
-									{
-										ResourceDeclaration: v1beta1.ResourceDeclaration{
-											Name: "my-image",
-											Type: "image",
-										},
-									},
-								},
-							},
-						},
-					},
+				Status: v1.TaskRunStatus{
+					// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+					// TaskRunStatusFields: v1.TaskRunStatusFields{
+					// 	ResourcesResult: []v1.PipelineResourceResult{
+					// 		{
+					// 			ResourceName: "my-image",
+					// 			Key:          "url",
+					// 			Value:        "gcr.io/foo/bar",
+					// 		},
+					// 		{
+					// 			ResourceName: "my-image",
+					// 			Key:          "digest",
+					// 			Value:        digest1,
+					// 		},
+					// 	},
+					// 	TaskSpec: &v1.TaskSpec{
+					// 		Resources: &v1.TaskResources{
+					// 			Outputs: []v1.TaskResource{
+					// 				{
+					// 					ResourceDeclaration: v1.ResourceDeclaration{
+					// 						Name: "my-image",
+					// 						Type: "image",
+					// 					},
+					// 				},
+					// 			},
+					// 		},
+					// 	},
+					// },
 				},
 			}),
 			want: []interface{}{createDigest(t, "gcr.io/foo/bar@sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5")},
 		},
 		{
 			name: "two images",
-			obj: objects.NewTaskRunObject(&v1beta1.TaskRun{
+			obj: objects.NewTaskRunObject(&v1.TaskRun{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "TaskRun",
 				},
-				Status: v1beta1.TaskRunStatus{
-					TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-						ResourcesResult: []v1beta1.PipelineResourceResult{
-							{
-								ResourceName: "my-image1",
-								Key:          "url",
-								Value:        "gcr.io/foo/bar",
-							},
-							{
-								ResourceName: "my-image1",
-								Key:          "digest",
-								Value:        digest1,
-							},
-							{
-								ResourceName: "my-image2",
-								Key:          "url",
-								Value:        "gcr.io/foo/baz",
-							},
-							{
-								ResourceName: "my-image2",
-								Key:          "digest",
-								Value:        digest2,
-							},
-						},
-						TaskSpec: &v1beta1.TaskSpec{
-							Resources: &v1beta1.TaskResources{
-								Outputs: []v1beta1.TaskResource{
-									{
-										ResourceDeclaration: v1beta1.ResourceDeclaration{
-											Name: "my-image1",
-											Type: "image",
-										},
-									},
-									{
-										ResourceDeclaration: v1beta1.ResourceDeclaration{
-											Name: "my-image2",
-											Type: "image",
-										},
-									},
-								},
-							},
-						},
+				Status: v1.TaskRunStatus{
+					TaskRunStatusFields: v1.TaskRunStatusFields{
+						// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+						// ResourcesResult: []v1.PipelineResourceResult{
+						// 	{
+						// 		ResourceName: "my-image1",
+						// 		Key:          "url",
+						// 		Value:        "gcr.io/foo/bar",
+						// 	},
+						// 	{
+						// 		ResourceName: "my-image1",
+						// 		Key:          "digest",
+						// 		Value:        digest1,
+						// 	},
+						// 	{
+						// 		ResourceName: "my-image2",
+						// 		Key:          "url",
+						// 		Value:        "gcr.io/foo/baz",
+						// 	},
+						// 	{
+						// 		ResourceName: "my-image2",
+						// 		Key:          "digest",
+						// 		Value:        digest2,
+						// 	},
+						// },
+						// TaskSpec: &v1.TaskSpec{
+						// 	Resources: &v1.TaskResources{
+						// 		Outputs: []v1.TaskResource{
+						// 			{
+						// 				ResourceDeclaration: v1.ResourceDeclaration{
+						// 					Name: "my-image1",
+						// 					Type: "image",
+						// 				},
+						// 			},
+						// 			{
+						// 				ResourceDeclaration: v1.ResourceDeclaration{
+						// 					Name: "my-image2",
+						// 					Type: "image",
+						// 				},
+						// 			},
+						// 		},
+						// 	},
+						// },
 					},
 				},
 			}),
@@ -145,36 +149,38 @@ func TestOCIArtifact_ExtractObjects(t *testing.T) {
 		},
 		{
 			name: "resource and result",
-			obj: objects.NewTaskRunObject(&v1beta1.TaskRun{
+			obj: objects.NewTaskRunObject(&v1.TaskRun{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "TaskRun",
 				},
-				Status: v1beta1.TaskRunStatus{
-					TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-						ResourcesResult: []v1beta1.PipelineResourceResult{
-							{
-								ResourceName: "my-image",
-								Key:          "url",
-								Value:        "gcr.io/foo/bar",
-							},
-							{
-								ResourceName: "my-image",
-								Key:          "digest",
-								Value:        digest1,
-							},
-						},
-						TaskRunResults: []v1beta1.TaskRunResult{
+				Status: v1.TaskRunStatus{
+					TaskRunStatusFields: v1.TaskRunStatusFields{
+						// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+						// ResourcesResult: []v1.PipelineResourceResult{
+						// 	{
+						// 		ResourceName: "my-image",
+						// 		Key:          "url",
+						// 		Value:        "gcr.io/foo/bar",
+						// 	},
+						// 	{
+						// 		ResourceName: "my-image",
+						// 		Key:          "digest",
+						// 		Value:        digest1,
+						// 	},
+						// },
+						Results: []v1.TaskRunResult{
 							{
 								Name:  "IMAGE_URL",
-								Value: *v1beta1.NewStructuredValues("gcr.io/foo/bat"),
+								Value: *v1.NewStructuredValues("gcr.io/foo/bat"),
 							},
 							{
 								Name:  "IMAGE_DIGEST",
-								Value: *v1beta1.NewStructuredValues("sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b4"),
+								Value: *v1.NewStructuredValues("sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b4"),
 							},
 						},
-						TaskSpec: &v1beta1.TaskSpec{
-							Results: []v1beta1.TaskResult{
+						TaskSpec: &v1.TaskSpec{
+							Results: []v1.TaskResult{
 								{
 									Name: "IMAGE_URL",
 								},
@@ -182,16 +188,18 @@ func TestOCIArtifact_ExtractObjects(t *testing.T) {
 									Name: "IMAGE_DIGEST",
 								},
 							},
-							Resources: &v1beta1.TaskResources{
-								Outputs: []v1beta1.TaskResource{
-									{
-										ResourceDeclaration: v1beta1.ResourceDeclaration{
-											Name: "my-image",
-											Type: "image",
-										},
-									},
-								},
-							},
+							// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+							// Resources: &v1.TaskResources{
+							// 	Outputs: []v1.TaskResource{
+							// 		{
+							// 			ResourceDeclaration: v1.ResourceDeclaration{
+							// 				Name: "my-image",
+							// 				Type: "image",
+							// 			},
+							// 		},
+							// 	},
+							// },
 						},
 					},
 				},
@@ -202,69 +210,71 @@ func TestOCIArtifact_ExtractObjects(t *testing.T) {
 		},
 		{
 			name: "extra",
-			obj: objects.NewTaskRunObject(&v1beta1.TaskRun{
+			obj: objects.NewTaskRunObject(&v1.TaskRun{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "TaskRun",
 				},
-				Status: v1beta1.TaskRunStatus{
-					TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-						TaskRunResults: []v1beta1.TaskRunResult{
+				Status: v1.TaskRunStatus{
+					TaskRunStatusFields: v1.TaskRunStatusFields{
+						Results: []v1.TaskRunResult{
 							{
 								Name:  "IMAGE_URL",
-								Value: *v1beta1.NewStructuredValues("foo"),
+								Value: *v1.NewStructuredValues("foo"),
 							},
 							{
 								Name:  "gibberish",
-								Value: *v1beta1.NewStructuredValues("baz"),
+								Value: *v1.NewStructuredValues("baz"),
 							},
 						},
-						ResourcesResult: []v1beta1.PipelineResourceResult{
-							{
-								ResourceName: "my-image",
-								Key:          "url",
-								Value:        "gcr.io/foo/bar",
-							},
-							{
-								ResourceName: "my-image",
-								Key:          "digest",
-								Value:        digest1,
-							},
-							{
-								ResourceName: "gibberish",
-								Key:          "url",
-								Value:        "gcr.io/foo/bar",
-							},
-							{
-								ResourceName: "gobble-dygook",
-								Key:          "digest",
-								Value:        digest1,
-							},
-						},
-						TaskSpec: &v1beta1.TaskSpec{
-							Resources: &v1beta1.TaskResources{
-								Outputs: []v1beta1.TaskResource{
-									{
-										ResourceDeclaration: v1beta1.ResourceDeclaration{
-											Name: "my-image",
-											Type: "image",
-										},
-									},
-								},
-							},
-						},
+						// TODO(aaron-prindle) make sure that removing this makes sense vs converting it to new v1 alternative
+
+						// ResourcesResult: []v1.PipelineResourceResult{
+						// 	{
+						// 		ResourceName: "my-image",
+						// 		Key:          "url",
+						// 		Value:        "gcr.io/foo/bar",
+						// 	},
+						// 	{
+						// 		ResourceName: "my-image",
+						// 		Key:          "digest",
+						// 		Value:        digest1,
+						// 	},
+						// 	{
+						// 		ResourceName: "gibberish",
+						// 		Key:          "url",
+						// 		Value:        "gcr.io/foo/bar",
+						// 	},
+						// 	{
+						// 		ResourceName: "gobble-dygook",
+						// 		Key:          "digest",
+						// 		Value:        digest1,
+						// 	},
+						// },
+						// TaskSpec: &v1.TaskSpec{
+						// 	Resources: &v1.TaskResources{
+						// 		Outputs: []v1.TaskResource{
+						// 			{
+						// 				ResourceDeclaration: v1.ResourceDeclaration{
+						// 					Name: "my-image",
+						// 					Type: "image",
+						// 				},
+						// 			},
+						// 		},
+						// 	},
+						// },
 					},
 				},
 			}),
 			want: []interface{}{createDigest(t, "gcr.io/foo/bar@sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5")},
 		}, {
 			name: "images",
-			obj: objects.NewTaskRunObject(&v1beta1.TaskRun{
-				Status: v1beta1.TaskRunStatus{
-					TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-						TaskRunResults: []v1beta1.TaskRunResult{
+			obj: objects.NewTaskRunObject(&v1.TaskRun{
+				Status: v1.TaskRunStatus{
+					TaskRunStatusFields: v1.TaskRunStatusFields{
+						Results: []v1.TaskRunResult{
 							{
 								Name:  "IMAGES",
-								Value: *v1beta1.NewStructuredValues(fmt.Sprintf("  \n \tgcr.io/foo/bar@%s\n,gcr.io/baz/bar@%s", digest1, digest2)),
+								Value: *v1.NewStructuredValues(fmt.Sprintf("  \n \tgcr.io/foo/bar@%s\n,gcr.io/baz/bar@%s", digest1, digest2)),
 							},
 						},
 					},
@@ -276,13 +286,13 @@ func TestOCIArtifact_ExtractObjects(t *testing.T) {
 			},
 		}, {
 			name: "images-newline",
-			obj: objects.NewTaskRunObject(&v1beta1.TaskRun{
-				Status: v1beta1.TaskRunStatus{
-					TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-						TaskRunResults: []v1beta1.TaskRunResult{
+			obj: objects.NewTaskRunObject(&v1.TaskRun{
+				Status: v1.TaskRunStatus{
+					TaskRunStatusFields: v1.TaskRunStatusFields{
+						Results: []v1.TaskRunResult{
 							{
 								Name:  "IMAGES",
-								Value: *v1beta1.NewStructuredValues(fmt.Sprintf("gcr.io/foo/bar@%s\ngcr.io/baz/bar@%s\n\n", digest1, digest2)),
+								Value: *v1.NewStructuredValues(fmt.Sprintf("gcr.io/foo/bar@%s\ngcr.io/baz/bar@%s\n\n", digest1, digest2)),
 							},
 						},
 					},
@@ -312,20 +322,20 @@ func TestOCIArtifact_ExtractObjects(t *testing.T) {
 }
 
 func TestExtractOCIImagesFromResults(t *testing.T) {
-	tr := &v1beta1.TaskRun{
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
-					{Name: "img1_IMAGE_URL", Value: *v1beta1.NewStructuredValues("img1")},
-					{Name: "img1_IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues(digest1)},
-					{Name: "img2_IMAGE_URL", Value: *v1beta1.NewStructuredValues("img2")},
-					{Name: "img2_IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues(digest2)},
-					{Name: "IMAGE_URL", Value: *v1beta1.NewStructuredValues("img3")},
-					{Name: "IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues(digest1)},
-					{Name: "img4_IMAGE_URL", Value: *v1beta1.NewStructuredValues("img4")},
-					{Name: "img5_IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues("sha123:abc")},
-					{Name: "empty_str_IMAGE_DIGEST", Value: *v1beta1.NewStructuredValues("")},
-					{Name: "empty_str_IMAGE_URL", Value: *v1beta1.NewStructuredValues("")},
+	tr := &v1.TaskRun{
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
+					{Name: "img1_IMAGE_URL", Value: *v1.NewStructuredValues("img1")},
+					{Name: "img1_IMAGE_DIGEST", Value: *v1.NewStructuredValues(digest1)},
+					{Name: "img2_IMAGE_URL", Value: *v1.NewStructuredValues("img2")},
+					{Name: "img2_IMAGE_DIGEST", Value: *v1.NewStructuredValues(digest2)},
+					{Name: "IMAGE_URL", Value: *v1.NewStructuredValues("img3")},
+					{Name: "IMAGE_DIGEST", Value: *v1.NewStructuredValues(digest1)},
+					{Name: "img4_IMAGE_URL", Value: *v1.NewStructuredValues("img4")},
+					{Name: "img5_IMAGE_DIGEST", Value: *v1.NewStructuredValues("sha123:abc")},
+					{Name: "empty_str_IMAGE_DIGEST", Value: *v1.NewStructuredValues("")},
+					{Name: "empty_str_IMAGE_URL", Value: *v1.NewStructuredValues("")},
 				},
 			},
 		},
@@ -349,23 +359,23 @@ func TestExtractOCIImagesFromResults(t *testing.T) {
 }
 
 func TestExtractSignableTargetFromResults(t *testing.T) {
-	tr := &v1beta1.TaskRun{
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
-					{Name: "mvn1_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/com.google.guava:guava:31.0-jre")},
-					{Name: "mvn1_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues(digest1)},
-					{Name: "mvn1_pom_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues("com.google.guava:guava:31.0-jre.pom")},
-					{Name: "mvn1_pom_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues(digest2)},
-					{Name: "mvn1_src_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues("com.google.guava:guava:31.0-jre-sources.jar")},
-					{Name: "mvn1_src_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues(digest3)},
-					{Name: "mvn2_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/a.b.c:d:1.0-jre")},
-					{Name: "mvn2_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues(digest4)},
-					{Name: "ARTIFACT_URI", Value: *v1beta1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/empty_prefix")},
-					{Name: "ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues(digest1)},
-					{Name: "miss_target_name_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues(digest1)},
-					{Name: "wrong_digest_format_ARTIFACT_URI", Value: *v1beta1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/wrong_digest_format")},
-					{Name: "wrong_digest_format_ARTIFACT_DIGEST", Value: *v1beta1.NewStructuredValues("abc")},
+	tr := &v1.TaskRun{
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
+					{Name: "mvn1_ARTIFACT_URI", Value: *v1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/com.google.guava:guava:31.0-jre")},
+					{Name: "mvn1_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues(digest1)},
+					{Name: "mvn1_pom_ARTIFACT_URI", Value: *v1.NewStructuredValues("com.google.guava:guava:31.0-jre.pom")},
+					{Name: "mvn1_pom_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues(digest2)},
+					{Name: "mvn1_src_ARTIFACT_URI", Value: *v1.NewStructuredValues("com.google.guava:guava:31.0-jre-sources.jar")},
+					{Name: "mvn1_src_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues(digest3)},
+					{Name: "mvn2_ARTIFACT_URI", Value: *v1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/a.b.c:d:1.0-jre")},
+					{Name: "mvn2_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues(digest4)},
+					{Name: "ARTIFACT_URI", Value: *v1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/empty_prefix")},
+					{Name: "ARTIFACT_DIGEST", Value: *v1.NewStructuredValues(digest1)},
+					{Name: "miss_target_name_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues(digest1)},
+					{Name: "wrong_digest_format_ARTIFACT_URI", Value: *v1.NewStructuredValues("projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/wrong_digest_format")},
+					{Name: "wrong_digest_format_ARTIFACT_DIGEST", Value: *v1.NewStructuredValues("abc")},
 				},
 			},
 		},
@@ -391,13 +401,13 @@ func TestExtractSignableTargetFromResults(t *testing.T) {
 }
 
 func TestExtractStructuredTargetFromResults(t *testing.T) {
-	tr := &v1beta1.TaskRun{
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
+	tr := &v1.TaskRun{
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
 					{
 						Name: "mvn1_pkg" + "_" + ArtifactsOutputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":           "projects/test-project/locations/us-west4/repositories/test-repo/mavenArtifacts/com.google.guava:guava:31.0-jre",
 							"digest":        digest1,
 							"signable_type": "",
@@ -405,7 +415,7 @@ func TestExtractStructuredTargetFromResults(t *testing.T) {
 					},
 					{
 						Name: "mvn1_pom_sha512" + "_" + ArtifactsOutputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":           "com.google.guava:guava:31.0-jre.pom",
 							"digest":        digest2,
 							"signable_type": "",
@@ -413,56 +423,56 @@ func TestExtractStructuredTargetFromResults(t *testing.T) {
 					},
 					{
 						Name: "img1_input" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest3,
 						}),
 					},
 					{
 						Name: "img2_input_sha1" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest_sha1,
 						}),
 					},
 					{
 						Name: "img2_input_incorrect_sha1" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest_incorrect_sha1,
 						}),
 					},
 					{
 						Name: "img3_input_sha384" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest_sha384,
 						}),
 					},
 					{
 						Name: "img3_input_incorrect_sha384" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest_incorrect_sha384,
 						}),
 					},
 					{
 						Name: "img4_input_sha512" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest_sha512,
 						}),
 					},
 					{
 						Name: "img4_input_incorrect_sha512" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/bar",
 							"digest": digest_incorrect_sha512,
 						}),
 					},
 					{
 						Name: "img2_input_no_digest" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    "gcr.io/foo/foo",
 							"digest": "",
 						}),
@@ -496,27 +506,27 @@ func TestExtractStructuredTargetFromResults(t *testing.T) {
 }
 
 func TestRetrieveMaterialsFromStructuredResults(t *testing.T) {
-	tr := &v1beta1.TaskRun{
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
-				TaskRunResults: []v1beta1.TaskRunResult{
+	tr := &v1.TaskRun{
+		Status: v1.TaskRunStatus{
+			TaskRunStatusFields: v1.TaskRunStatusFields{
+				Results: []v1.TaskRunResult{
 					{
 						Name: "img1_input" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    OCIScheme + "gcr.io/foo/bar",
 							"digest": "sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b7",
 						}),
 					},
 					{
 						Name: "img2_input_no_digest" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    OCIScheme + "gcr.io/foo/foo",
 							"digest": "",
 						}),
 					},
 					{
 						Name: "img2_input_invalid_digest" + "_" + ArtifactsInputsResultName,
-						Value: *v1beta1.NewObject(map[string]string{
+						Value: *v1.NewObject(map[string]string{
 							"uri":    OCIScheme + "gcr.io/foo/foo",
 							"digest": "sha:123",
 						}),
@@ -552,7 +562,7 @@ func TestValidateResults(t *testing.T) {
 			categoryMarker: ArtifactsOutputsResultName,
 			obj: objects.Result{
 				Name: "valid_result-ARTIFACT_OUTPUTS",
-				Value: v1beta1.ParamValue{
+				Value: v1.ParamValue{
 					ObjectVal: map[string]string{
 						"uri":    "gcr.io/foo/bar",
 						"digest": digest3,
@@ -567,7 +577,7 @@ func TestValidateResults(t *testing.T) {
 			categoryMarker: ArtifactsOutputsResultName,
 			obj: objects.Result{
 				Name: "missing_digest-ARTIFACT_OUTPUTS",
-				Value: v1beta1.ParamValue{
+				Value: v1.ParamValue{
 					ObjectVal: map[string]string{
 						"uri": "gcr.io/foo/bar",
 					},
@@ -581,7 +591,7 @@ func TestValidateResults(t *testing.T) {
 			categoryMarker: ArtifactsOutputsResultName,
 			obj: objects.Result{
 				Name: "missing_digest-ARTIFACT_OUTPUTS",
-				Value: v1beta1.ParamValue{
+				Value: v1.ParamValue{
 					ObjectVal: map[string]string{
 						"digest": digest3,
 					},
@@ -595,7 +605,7 @@ func TestValidateResults(t *testing.T) {
 			categoryMarker: ArtifactsOutputsResultName,
 			obj: objects.Result{
 				Name: "missing_digest-ARTIFACT_OUTPUTS",
-				Value: v1beta1.ParamValue{
+				Value: v1.ParamValue{
 					ObjectVal: map[string]string{
 						"uri":    "gcr.io/foo/bar",
 						"digest": "",
@@ -610,7 +620,7 @@ func TestValidateResults(t *testing.T) {
 			categoryMarker: ArtifactsOutputsResultName,
 			obj: objects.Result{
 				Name: "missing_digest-ARTIFACTs_OUTPUTS",
-				Value: v1beta1.ParamValue{
+				Value: v1.ParamValue{
 					ObjectVal: map[string]string{
 						"uri":    "gcr.io/foo/bar",
 						"digest": digest3,
