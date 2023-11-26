@@ -44,7 +44,9 @@ var e1BuildFinished = time.Unix(1617011415, 0)
 func TestTaskRunCreatePayload1(t *testing.T) {
 	ctx := logtesting.TestContextWithLogger(t)
 
-	tr, err := objectloader.TaskRunFromFile("../testdata/taskrun1.json")
+	// TODO(aaron-prindle) currently v1beta1 dir maps to slsav1 // intotoite6.go tests AND internal/material
+	// - might make sense to remove v1beta1 dir and make this more clear
+	tr, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun1.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +137,7 @@ func TestTaskRunCreatePayload1(t *testing.T) {
 	}
 	i, _ := NewFormatter(cfg)
 
-	got, err := i.CreatePayload(ctx, objects.NewTaskRunObject(tr))
+	got, err := i.CreatePayload(ctx, objects.NewTaskRunObjectV1Beta1(tr))
 
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
@@ -148,7 +150,7 @@ func TestTaskRunCreatePayload1(t *testing.T) {
 
 func TestPipelineRunCreatePayload(t *testing.T) {
 	ctx := logtesting.TestContextWithLogger(t)
-	pr, err := objectloader.PipelineRunFromFile("../testdata/pipelinerun1.json")
+	pr, err := objectloader.PipelineRunV1Beta1FromFile("../testdata/v1beta1/pipelinerun1.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,15 +349,15 @@ func TestPipelineRunCreatePayload(t *testing.T) {
 		},
 	}
 
-	tr1, err := objectloader.TaskRunFromFile("../testdata/taskrun1.json")
+	tr1, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun1.json")
 	if err != nil {
 		t.Errorf("error reading taskrun1: %s", err.Error())
 	}
-	tr2, err := objectloader.TaskRunFromFile("../testdata/taskrun2.json")
+	tr2, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun2.json")
 	if err != nil {
 		t.Errorf("error reading taskrun: %s", err.Error())
 	}
-	pro := objects.NewPipelineRunObject(pr)
+	pro := objects.NewPipelineRunObjectV1Beta1(pr)
 	pro.AppendTaskRun(tr1)
 	pro.AppendTaskRun(tr2)
 
@@ -372,7 +374,7 @@ func TestPipelineRunCreatePayload(t *testing.T) {
 }
 func TestPipelineRunCreatePayloadChildRefs(t *testing.T) {
 	ctx := logtesting.TestContextWithLogger(t)
-	pr, err := objectloader.PipelineRunFromFile("../testdata/pipelinerun-childrefs.json")
+	pr, err := objectloader.PipelineRunV1Beta1FromFile("../testdata/v1beta1/pipelinerun-childrefs.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -565,15 +567,15 @@ func TestPipelineRunCreatePayloadChildRefs(t *testing.T) {
 		},
 	}
 
-	tr1, err := objectloader.TaskRunFromFile("../testdata/taskrun1.json")
+	tr1, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun1.json")
 	if err != nil {
 		t.Errorf("error reading taskrun1: %s", err.Error())
 	}
-	tr2, err := objectloader.TaskRunFromFile("../testdata/taskrun2.json")
+	tr2, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun2.json")
 	if err != nil {
 		t.Errorf("error reading taskrun: %s", err.Error())
 	}
-	pro := objects.NewPipelineRunObject(pr)
+	pro := objects.NewPipelineRunObjectV1Beta1(pr)
 	pro.AppendTaskRun(tr1)
 	pro.AppendTaskRun(tr2)
 
@@ -590,7 +592,7 @@ func TestPipelineRunCreatePayloadChildRefs(t *testing.T) {
 
 func TestTaskRunCreatePayload2(t *testing.T) {
 	ctx := logtesting.TestContextWithLogger(t)
-	tr, err := objectloader.TaskRunFromFile("../testdata/taskrun2.json")
+	tr, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun2.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -653,7 +655,7 @@ func TestTaskRunCreatePayload2(t *testing.T) {
 		},
 	}
 	i, _ := NewFormatter(cfg)
-	got, err := i.CreatePayload(ctx, objects.NewTaskRunObject(tr))
+	got, err := i.CreatePayload(ctx, objects.NewTaskRunObjectV1Beta1(tr))
 
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
@@ -666,7 +668,7 @@ func TestTaskRunCreatePayload2(t *testing.T) {
 func TestMultipleSubjects(t *testing.T) {
 	ctx := logtesting.TestContextWithLogger(t)
 
-	tr, err := objectloader.TaskRunFromFile("../testdata/taskrun-multiple-subjects.json")
+	tr, err := objectloader.TaskRunV1Beta1FromFile("../testdata/v1beta1/taskrun-multiple-subjects.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -724,7 +726,7 @@ func TestMultipleSubjects(t *testing.T) {
 	}
 
 	i, _ := NewFormatter(cfg)
-	got, err := i.CreatePayload(ctx, objects.NewTaskRunObject(tr))
+	got, err := i.CreatePayload(ctx, objects.NewTaskRunObjectV1Beta1(tr))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
 	}

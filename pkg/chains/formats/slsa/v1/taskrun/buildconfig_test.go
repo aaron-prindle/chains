@@ -84,7 +84,7 @@ status:
 		},
 	}
 
-	got := buildConfig(objects.NewTaskRunObject(taskRun))
+	got := buildConfig(objects.NewTaskRunObjectV1Beta1(taskRun))
 	if !reflect.DeepEqual(expected, got) {
 		if d := cmp.Diff(expected, got); d != "" {
 			t.Log(d)

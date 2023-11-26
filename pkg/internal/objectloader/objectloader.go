@@ -20,10 +20,35 @@ import (
 	"encoding/json"
 	"os"
 
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
-func TaskRunFromFile(f string) (*v1beta1.TaskRun, error) {
+func TaskRunFromFile(f string) (*v1.TaskRun, error) {
+	contents, err := os.ReadFile(f)
+	if err != nil {
+		return nil, err
+	}
+	var tr v1.TaskRun
+	if err := json.Unmarshal(contents, &tr); err != nil {
+		return nil, err
+	}
+	return &tr, nil
+}
+
+func PipelineRunFromFile(f string) (*v1.PipelineRun, error) {
+	contents, err := os.ReadFile(f)
+	if err != nil {
+		return nil, err
+	}
+	var pr v1.PipelineRun
+	if err := json.Unmarshal(contents, &pr); err != nil {
+		return nil, err
+	}
+	return &pr, nil
+}
+
+func TaskRunV1Beta1FromFile(f string) (*v1beta1.TaskRun, error) {
 	contents, err := os.ReadFile(f)
 	if err != nil {
 		return nil, err
@@ -35,7 +60,7 @@ func TaskRunFromFile(f string) (*v1beta1.TaskRun, error) {
 	return &tr, nil
 }
 
-func PipelineRunFromFile(f string) (*v1beta1.PipelineRun, error) {
+func PipelineRunV1Beta1FromFile(f string) (*v1beta1.PipelineRun, error) {
 	contents, err := os.ReadFile(f)
 	if err != nil {
 		return nil, err
