@@ -74,7 +74,7 @@ func TestMetadata(t *testing.T) {
 		BuildStartedOn:  &start,
 		BuildFinishedOn: &end,
 	}
-	got := slsav1.Metadata(objects.NewTaskRunObject(tr))
+	got := slsav1.Metadata(objects.NewTaskRunObjectV1Beta1(tr))
 	if !reflect.DeepEqual(expected, got) {
 		t.Fatalf("expected %v got %v", expected, got)
 	}
@@ -103,7 +103,7 @@ func TestMetadataInTimeZone(t *testing.T) {
 		BuildStartedOn:  &start,
 		BuildFinishedOn: &end,
 	}
-	got := slsav1.Metadata(objects.NewTaskRunObject(tr))
+	got := slsav1.Metadata(objects.NewTaskRunObjectV1Beta1(tr))
 	if !reflect.DeepEqual(expected, got) {
 		t.Fatalf("expected %v got %v", expected, got)
 	}
@@ -214,7 +214,7 @@ status:
 			},
 		},
 	}
-	got := invocation(objects.NewTaskRunObject(taskRun))
+	got := invocation(objects.NewTaskRunObjectV1Beta1(taskRun))
 	if !reflect.DeepEqual(expected, got) {
 		if d := cmp.Diff(expected, got); d != "" {
 			t.Log(d)
@@ -357,7 +357,7 @@ func TestGetSubjectDigests(t *testing.T) {
 			},
 		},
 	}
-	tro := objects.NewTaskRunObject(tr)
+	tro := objects.NewTaskRunObjectV1Beta1(tr)
 	ctx := logtesting.TestContextWithLogger(t)
 	got := extract.SubjectDigests(ctx, tro, nil)
 

@@ -97,6 +97,13 @@ jobs:
         --type merge \
         --patch '{"data":{"artifacts.oci.format": "simplesigning", "artifacts.oci.storage": "oci", "artifacts.taskrun.format": "in-toto", "signers.x509.fulcio.address": "http://fulcio.fulcio-system.svc", "signers.x509.fulcio.enabled": "true", "transparency.enabled": "true", "transparency.url": "http://rekor.rekor-system.svc"}}'
 
+        if [ "${{ inputs.pipelines-release }}" = "v0.41.3" ]
+        then
+          kubectl patch configmap/chains-config \
+          --namespace tekton-chains \
+          --type merge \
+          --patch '{"data":{"artifacts.oci.format": "simplesigning", "artifacts.oci.storage": "oci", "artifacts.taskrun.format": "in-toto", "signers.x509.fulcio.address": "http://fulcio.fulcio-system.svc", "signers.x509.fulcio.enabled": "true", "transparency.enabled": "true", "transparency.url": "http://rekor.rekor-system.svc", "tektonAPI.watchForTektonAPIV1Beta1Instead": "true"}}'
+        fi
         # Restart chains controller so picks up the changes.
         kubectl -n tekton-chains delete po -l app=tekton-chains-controller
 
